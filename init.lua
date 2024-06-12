@@ -1,25 +1,5 @@
 --[[
 
-=====================================================================
-==================== READ THIS BEFORE CONTINUING ====================
-=====================================================================
-========                                    .-----.          ========
-========         .----------------------.   | === |          ========
-========         |.-""""""""""""""""""-.|   |-----|          ========
-========         ||                    ||   | === |          ========
-========         ||   KICKSTART.NVIM   ||   |-----|          ========
-========         ||                    ||   | === |          ========
-========         ||                    ||   |-----|          ========
-========         ||:Tutor              ||   |:::::|          ========
-========         |'-..................-'|   |____o|          ========
-========         `"")----------------(""`   ___________      ========
-========        /::::::::::|  |::::::::::\  \ no mouse \     ========
-========       /:::========|  |==hjkl==:::\  \ required \    ========
-========      '""""""""""""'  '""""""""""""'  '""""""""""'   ========
-========                                                     ========
-=====================================================================
-=====================================================================
-
 What is Kickstart?
 
   Kickstart.nvim is *not* a distribution.
@@ -91,7 +71,7 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
-vim.g.have_nerd_font = false
+vim.g.have_nerd_font = true
 
 -- [[ Setting options ]]
 -- See `:help vim.opt`
@@ -167,6 +147,21 @@ vim.keymap.set('n', ']d', vim.diagnostic.goto_next, { desc = 'Go to next [D]iagn
 vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float, { desc = 'Show diagnostic [E]rror messages' })
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
 
+-- oil
+vim.keymap.set('n', '-', '<CMD>Oil<CR>', { desc = 'Open parent directory' })
+vim.keymap.set('n', '<leader>fv', '<CMD>Oil<CR>', { desc = 'Open parent directory' })
+
+-- harppon
+-- vim.keymap.set('n', '<leader>a', require('harpoon.mark').add_file)
+-- vim.keymap.set('n', '<C-e>', require('harpoon.ui').toggle_quick_menu)
+
+-- FineCmdline
+vim.api.nvim_set_keymap('n', ':', '<cmd>FineCmdline<CR>', { noremap = true })
+
+-- Rest
+vim.keymap.set('n', '<localleader>ttp', '<cmd>Rest run<cr>', { desc = 'Run request under the cursor' })
+vim.keymap.set('n', '<localleader>tttp', '<cmd>Rest run last<cr>', { desc = 'Re-run latest request' })
+
 -- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
 -- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
 -- is not what someone will guess without a bit more experience.
@@ -204,6 +199,9 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   end,
 })
 
+--tabsize
+vim.opt.tabstop = 2
+
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
@@ -227,6 +225,13 @@ vim.opt.rtp:prepend(lazypath)
 require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
+  '/tpope/vim-fugitive',
+  {
+    'stevearc/oil.nvim',
+    opts = {},
+    -- Optional dependencies
+    dependencies = { 'nvim-tree/nvim-web-devicons' },
+  },
 
   -- NOTE: Plugins can also be added by using a table,
   -- with the first argument being the link and the following
@@ -295,7 +300,27 @@ require('lazy').setup({
       }, { mode = 'v' })
     end,
   },
-
+  {
+    'vhyrro/luarocks.nvim',
+    priority = 1000,
+    config = true,
+    opts = {
+      rocks = { 'lua-curl', 'nvim-nio', 'mimetypes', 'xml2lua' },
+    },
+  },
+  {
+    'rest-nvim/rest.nvim',
+    ft = 'http',
+    dependencies = { 'luarocks.nvim' },
+    config = function()
+      require('rest-nvim').setup()
+    end,
+  },
+  'ThePrimeagen/harpoon',
+  { 'rose-pine/neovim', name = 'rose-pine' },
+  'MunifTanjim/nui.nvim',
+  'VonHeikemen/fine-cmdline.nvim',
+  'github/copilot.vim',
   -- NOTE: Plugins can specify dependencies.
   --
   -- The dependencies are proper plugin specifications as well - anything
@@ -323,8 +348,15 @@ require('lazy').setup({
         end,
       },
       { 'nvim-telescope/telescope-ui-select.nvim' },
-
-      -- Useful for getting pretty icons, but requires a Nerd Font.
+      -- nvim-dap
+      -- {
+      --   'mfussenegger/nvim-dap', -- Useful for getting pretty icons, but requires a Nerd Font.
+      --   dependencies = { 'rcarriga/nvim-dap-ui', 'theHamsta/nvim-dap-virtual-text' },
+      --   cond = function()
+      --               require('dapui').setup()
+      --               require('dap-virtual-text').setup()
+      --   end,
+      -- },
       { 'nvim-tree/nvim-web-devicons', enabled = vim.g.have_nerd_font },
     },
     config = function()
@@ -607,6 +639,9 @@ require('lazy').setup({
       local ensure_installed = vim.tbl_keys(servers or {})
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
+        'prettier', -- Used to format JavaScript/TypeScript code
+        'tailwindcss', -- Used to lint TailwindCSS code
+        'ktlint', -- Used to lint Kotlin code
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
@@ -617,6 +652,7 @@ require('lazy').setup({
             -- This handles overriding only values explicitly passed
             -- by the server configuration above. Useful when disabling
             -- certain features of an LSP (for example, turning off formatting for tsserver)
+            -- disble tsx
             server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
             require('lspconfig')[server_name].setup(server)
           end,
@@ -624,7 +660,11 @@ require('lazy').setup({
       }
     end,
   },
-
+  {
+    'pmizio/typescript-tools.nvim',
+    dependencies = { 'nvim-lua/plenary.nvim', 'neovim/nvim-lspconfig' },
+    opts = {},
+  },
   { -- Autoformat
     'stevearc/conform.nvim',
     lazy = false,
@@ -644,7 +684,7 @@ require('lazy').setup({
         -- Disable "format_on_save lsp_fallback" for languages that don't
         -- have a well standardized coding style. You can add additional
         -- languages here or re-enable it for the disabled ones.
-        local disable_filetypes = { c = true, cpp = true }
+        local disable_filetypes = { c = true, cpp = true, typescript = true, javascript = true, tsx = true, jsx = true }
         return {
           timeout_ms = 500,
           lsp_fallback = not disable_filetypes[vim.bo[bufnr].filetype],
@@ -652,12 +692,10 @@ require('lazy').setup({
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
-        -- Conform can also run multiple formatters sequentially
-        -- python = { "isort", "black" },
-        --
-        -- You can use a sub-list to tell conform to run *until* a formatter
-        -- is found.
-        -- javascript = { { "prettierd", "prettier" } },
+        tsx = { 'prettier' },
+        typescript = { 'prettier' },
+        javascript = { 'prettier' },
+        css = { 'prettier' },
       },
     },
   },
@@ -910,3 +948,26 @@ require('lazy').setup({
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
+function light()
+  vim.cmd 'set background=light'
+  vim.cmd 'colorscheme rose-pine'
+end
+
+function dark()
+  vim.cmd 'set background=dark'
+  vim.cmd 'colorscheme rose-pine'
+end
+
+vim.cmd 'command Light silent lua light()'
+vim.cmd 'command Dark silent lua dark()'
+function getKittyTheme()
+  return vim.fn.system([[awk -F: 'NR==1 {print $2}' ~/.config/kitty/current-theme.conf]]):match '^%s*(.-)%s*$'
+end
+
+local kittyTheme = getKittyTheme()
+
+if kittyTheme == 'Rosé Pine Moon' then
+  dark()
+else
+  light()
+end
