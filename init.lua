@@ -262,23 +262,7 @@ require('lazy').setup({
       },
     },
   },
-
-  -- NOTE: Plugins can also be configured to run Lua code when they are loaded.
-  --
-  -- This is often very useful to both group configuration, as well as handle
-  -- lazy loading plugins that don't need to be loaded immediately at startup.
-  --
-  -- For example, in the following configuration, we use:
-  --  event = 'VimEnter'
-  --
-  -- which loads which-key before all the UI elements are loaded. Events can be
-  -- normal autocommands events (`:help autocmd-events`).
-  --
-  -- Then, because we use the `config` key, the configuration only runs
-  -- after the plugin has been loaded:
-  --  config = function() ... end
-
-  { -- Useful plugin to show you pending keybinds.
+    { -- Useful plugin to show you pending keybinds.
     'folke/which-key.nvim',
     event = 'VimEnter', -- Sets the loading event to 'VimEnter'
     config = function() -- This is the function that runs, AFTER loading
@@ -308,26 +292,11 @@ require('lazy').setup({
       rocks = { 'lua-curl', 'nvim-nio', 'mimetypes', 'xml2lua' },
     },
   },
-  {
-    'rest-nvim/rest.nvim',
-    ft = 'http',
-    dependencies = { 'luarocks.nvim' },
-    config = function()
-      require('rest-nvim').setup()
-    end,
-  },
   'ThePrimeagen/harpoon',
   { 'rose-pine/neovim', name = 'rose-pine' },
   'MunifTanjim/nui.nvim',
   'VonHeikemen/fine-cmdline.nvim',
   'github/copilot.vim',
-  -- NOTE: Plugins can specify dependencies.
-  --
-  -- The dependencies are proper plugin specifications as well - anything
-  -- you do for a plugin at the top level, you can do for a dependency.
-  --
-  -- Use the `dependencies` key to specify the dependencies of a particular plugin
-
   { -- Fuzzy Finder (files, lsp, etc)
     'nvim-telescope/telescope.nvim',
     event = 'VimEnter',
@@ -680,16 +649,17 @@ require('lazy').setup({
     },
     opts = {
       notify_on_error = false,
-      format_on_save = function(bufnr)
-        -- Disable "format_on_save lsp_fallback" for languages that don't
-        -- have a well standardized coding style. You can add additional
-        -- languages here or re-enable it for the disabled ones.
-        local disable_filetypes = { c = true, cpp = true, typescript = true, javascript = true, tsx = true, jsx = true }
-        return {
-          timeout_ms = 500,
-          lsp_fallback = not disable_filetypes[vim.bo[bufnr].filetype],
-        }
-      end,
+      format_on_save = false,
+      ---format_on_save = function(bufnr)
+      ---  -- Disable "format_on_save lsp_fallback" for languages that don't
+      ---  -- have a well standardized coding style. You can add additional
+      ---  -- languages here or re-enable it for the disabled ones.
+      ---  local disable_filetypes = { c = true, cpp = true, typescript = true, javascript = true, tsx = true, jsx = true }
+      ---  return {
+      ---    timeout_ms = 500,
+      ---    lsp_fallback = not disable_filetypes[vim.bo[bufnr].filetype],
+      ---  }
+      ---end,
       formatters_by_ft = {
         lua = { 'stylua' },
         tsx = { 'prettier' },
