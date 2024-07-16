@@ -225,7 +225,6 @@ vim.opt.rtp:prepend(lazypath)
 require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
-  '/tpope/vim-fugitive',
   {
     'stevearc/oil.nvim',
     opts = {},
@@ -262,7 +261,7 @@ require('lazy').setup({
       },
     },
   },
-    { -- Useful plugin to show you pending keybinds.
+  { -- Useful plugin to show you pending keybinds.
     'folke/which-key.nvim',
     event = 'VimEnter', -- Sets the loading event to 'VimEnter'
     config = function() -- This is the function that runs, AFTER loading
@@ -297,6 +296,84 @@ require('lazy').setup({
   'MunifTanjim/nui.nvim',
   'VonHeikemen/fine-cmdline.nvim',
   'github/copilot.vim',
+
+  -----------------------------------------------------------------------------
+  -- DEBUGGING
+
+  -- DAP Client for nvim
+  -- - start the debugger with `<leader>dc`
+  -- - add breakpoints with `<leader>db`
+  -- - terminate the debugger `<leader>dt`
+  { 'nvim-neotest/nvim-nio' },
+  {
+    'mfussenegger/nvim-dap',
+    keys = {
+      {
+        '<leader>dc',
+        function()
+          require('dap').continue()
+        end,
+        desc = 'Start/Continue Debugger',
+      },
+      {
+        '<leader>db',
+        function()
+          require('dap').toggle_breakpoint()
+        end,
+        desc = 'Add Breakpoint',
+      },
+      {
+        '<leader>dt',
+        function()
+          require('dap').terminate()
+        end,
+        desc = 'Terminate Debugger',
+      },
+    },
+  },
+
+  -- UI for the debugger
+  -- - the debugger UI is also automatically opened when starting/stopping the debugger
+  -- - toggle debugger UI manually with `<leader>du`
+  {
+    'rcarriga/nvim-dap-ui',
+    dependencies = {'mfussenegger/nvim-dap', 'nvim-neotest/nvim-nio'},
+    keys = {
+      {
+        '<leader>du',
+        function()
+          require('dapui').toggle()
+        end,
+        desc = 'Toggle Debugger UI',
+      },
+    },
+    -- automatically open/close the DAP UI when starting/stopping the debugger
+    config = function()
+      local listener = require('dap').listeners
+      listener.after.event_initialized['dapui_config'] = function()
+        require('dapui').open()
+      end
+      listener.before.event_terminated['dapui_config'] = function()
+        require('dapui').close()
+      end
+      listener.before.event_exited['dapui_config'] = function()
+        require('dapui').close()
+      end
+    end,
+  },
+
+  -- Configuration for the python debugger
+  -- - configures debugpy for us
+  -- - uses the debugpy installation from mason
+  {
+    'mfussenegger/nvim-dap-python',
+    dependencies = 'mfussenegger/nvim-dap',
+    config = function()
+      -- uses the debugypy installation by mason
+      local debugpyPythonPath = require('mason-registry').get_package('debugpy'):get_install_path() .. '/venv/bin/python3'
+      require('dap-python').setup(debugpyPythonPath, {})
+    end,
+  },
   { -- Fuzzy Finder (files, lsp, etc)
     'nvim-telescope/telescope.nvim',
     event = 'VimEnter',
@@ -317,15 +394,6 @@ require('lazy').setup({
         end,
       },
       { 'nvim-telescope/telescope-ui-select.nvim' },
-      -- nvim-dap
-      -- {
-      --   'mfussenegger/nvim-dap', -- Useful for getting pretty icons, but requires a Nerd Font.
-      --   dependencies = { 'rcarriga/nvim-dap-ui', 'theHamsta/nvim-dap-virtual-text' },
-      --   cond = function()
-      --               require('dapui').setup()
-      --               require('dap-virtual-text').setup()
-      --   end,
-      -- },
       { 'nvim-tree/nvim-web-devicons', enabled = vim.g.have_nerd_font },
     },
     config = function()
@@ -568,7 +636,8 @@ require('lazy').setup({
       local servers = {
         -- clangd = {},
         -- gopls = {},
-        -- pyright = {},
+        pyright = {},
+        debugpy = {},
         -- rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
@@ -578,7 +647,7 @@ require('lazy').setup({
         -- But for many setups, the LSP (`tsserver`) will work just fine
         -- tsserver = {},
         --
-
+        kotlin_language_server = {},
         lua_ls = {
           -- cmd = {...},
           -- filetypes = { ...},
@@ -629,6 +698,7 @@ require('lazy').setup({
       }
     end,
   },
+
   {
     'pmizio/typescript-tools.nvim',
     dependencies = { 'nvim-lua/plenary.nvim', 'neovim/nvim-lspconfig' },
@@ -666,10 +736,11 @@ require('lazy').setup({
         typescript = { 'prettier' },
         javascript = { 'prettier' },
         css = { 'prettier' },
+        kotlin = { 'ktlint' },
+        python = { 'black' },
       },
     },
   },
-
   { -- Autocompletion
     'hrsh7th/nvim-cmp',
     event = 'InsertEnter',
@@ -843,7 +914,7 @@ require('lazy').setup({
     'nvim-treesitter/nvim-treesitter',
     build = ':TSUpdate',
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'vim', 'vimdoc' },
+      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'vim', 'vimdoc', 'kotlin' },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
